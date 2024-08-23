@@ -1,29 +1,47 @@
 import { Router } from "express";
+import { pool } from "../db.js";
 
 const router = Router();
 
-router.get('/users', (req,res) => {
-    res.send('getting users')
+router.get('/users', async (req, res) => {
+
+    const { rows } = await pool.query('SELECT * FROM users')
+    res.json(rows)
 })
 
-router.get('/users/:userId', (req,res) => {
+router.get('/users/:id', async (req, res) => {
     //de acá se saca un parametro que en este caso es el id
-    const {userId} = req.params
-    res.send('getting user by id: ' + userId)
+    const { id } = req.params;
+    const { rows } = await pool.query('SELECT * FROM users WHERE id = $1', [id])
+    if (rows.length === 0) {
+        return res.status(404).json({ message: 'usuario no encontrado' })
+    }
+    res.json(rows[0]);
 })
 
-router.post('/users', (req,res) => {
-    res.send('create user')
+router.post('/users', async (req, res) => {
+
+    const data = req.body;
+    const { rows } = await pool.query('INSERT INTO users (name, email) VALUES ($1 , $2) RETURNING *', [data.name, data.email])
+    return res.json(rows[0])
 })
 
-router.delete('/users/:userId', (req,res) => {
-    
-    res.send(`deleting user : ${userId}`)
+router.delete('/users/:id', async (req, res) => {
+    const { id } = req.params;
+    const { rowCount } = await pool.query('DELETE FROM users WHERE id = $1 RETURNING *', [id])
+    if (rowCount === 0) {
+        return res.status(404).json({ message: 'usuario no encontrado' })
+    }
+
+    return res.sendStatus(204)
 })
 
-router.put('/users/:userId', (req,res) => {
-    const {userId} = req.params;
-    res.send('updating user' + userId)
+router.put('/users/:id', async (req, res) => {
+    const { id } = req.params;
+    const data = req.body;
+    const { rows } = await pool.query('UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING *', [data.name, data.email, id])
+
+    return res.json(rows[0])
 })
 
 
