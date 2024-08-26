@@ -1,4 +1,4 @@
-CREATE TABLE userss(
+CREATE TABLE users(
 
     id SERIAL PRIMARY KEY,
     name VARCHAR(225) NOT NULL, 
